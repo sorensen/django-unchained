@@ -1,0 +1,179 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Django-unchained by sorensen</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Django-unchained</h1>
+        <p>Provides an easier way of overriding Django's default QuerySet, by default allowing you to tap into the args and kwargs of any QuerySet method without overriding them all</p>
+
+        <p class="view"><a href="https://github.com/sorensen/django-unchained">View the Project on GitHub <small>sorensen/django-unchained</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/sorensen/django-unchained/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/sorensen/django-unchained/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/sorensen/django-unchained">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>Django Unchained</h1>
+
+<p>Provides an easier way of overriding Django's default QuerySet, by default allowing you to tap into
+the args and kwargs of any QuerySet method without overriding them all. The package also provides an
+integration manager and injection manager for re-mapping queries sent to the ORM, or forcing all queries
+to contain a certain constraint. Unchain your Django app!</p>
+
+<h2>Installation</h2>
+
+<div class="highlight">
+<pre>pip install django-orm-unchained
+</pre>
+</div>
+
+
+<p>Alternatively, you can download the project and put the <code>client_errors</code> directory into 
+your project directory.</p>
+
+<p>Add the following app to your project's <code>INSTALLED_APPS</code> in the <code>settings.py</code> file:</p>
+
+<pre><code>'unchained',
+</code></pre>
+
+<h2>Configuration</h2>
+
+<ul>
+<li>
+<code>UNCHAINED_ENABLE_INTEGRATION</code> enable ORM field mapping (optional, default <code>True</code>)</li>
+<li>
+<code>UNCHAINED_ENABLE_INJECTION</code> enable ORM query injection (optional, default <code>True</code>)</li>
+</ul><h2>Usage</h2>
+
+<p>By having any model inherit from the <code>unchained.IntegrationModel</code>, you can specify a <code>FIELD_MAP</code>
+dict attribute on the model, telling the ORM what fields to automatically map to another. This may 
+also be done dynamically if the value to any key begins with a <code>__</code>, which will then call to the 
+model's <code>get_field_mapper</code> method to get the correct field.</p>
+
+<div class="highlight">
+<pre><span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">models</span>
+<span class="kn">import</span> <span class="nn">unchained</span>
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">unchained</span><span class="o">.</span><span class="n">IntegrationModel</span><span class="p">):</span>
+    <span class="n">FIELD_MAP</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">'old'</span> <span class="p">:</span> <span class="s">'new'</span><span class="p">,</span>
+        <span class="s">'blah'</span> <span class="p">:</span> <span class="s">'__hey__there'</span>
+    <span class="p">}</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get_field_mapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">'dynamically</span><span class="si">%s</span><span class="s">'</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">FIELD_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+</pre>
+</div>
+
+
+<p>The <code>unchained.InjectionModel</code> will behave similarly, the model will need a <code>INJECTION_MAP</code> 
+dict attribute to tell the ORM what to look for.  The key represents the field, or partial field,
+to look for (since it may represent a variety of options), and the value represents the actual
+field to use.  If the value begins with a <code>__</code>, a prefix will be added by calling the model's 
+<code>get_injection_prefix</code> method. It will always call a <code>get_injection_value</code> method on the model 
+to find out what value should be used for the query.</p>
+
+<div class="highlight">
+<pre><span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">unchained</span><span class="o">.</span><span class="n">InjectionModel</span><span class="p">):</span>
+    <span class="n">INJECTION_MAP</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">'search'</span> <span class="p">:</span> <span class="s">'actual_search_field'</span><span class="p">,</span>
+        <span class="s">'partial'</span> <span class="p">:</span> <span class="s">'__dont_know__yet'</span>
+    <span class="p">}</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get_injection_prefix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">'icouldbedynamic'</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get_injection_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">field</span> <span class="o">==</span> <span class="s">'search'</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">3</span>
+        <span class="k">elif</span> <span class="n">field</span> <span class="o">==</span> <span class="s">'partial'</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">'heeeeeey'</span>
+        <span class="k">raise</span> <span class="ne">Exception</span>
+</pre>
+</div>
+
+
+<p>Both classes can be combined using the <code>unchained.InjectIntegrateModel</code></p>
+
+<p>If you would like to override the base <code>unchained.UnchainedModel</code>, <code>unchained.UnchainedQuerySet</code>, 
+or <code>unchained.UnchainedManager</code>, you will need to replace all three. (sorry, its a Django thing).
+You can also set a models <code>objects</code> directly to your custom manager and then not need to override
+the model itself. I tend to inherit from the custom model class as to save myself from repeating 
+too much code. But its up to you.</p>
+
+<div class="highlight">
+<pre><span class="kn">import</span> <span class="nn">unchained</span>
+
+<span class="k">class</span> <span class="nc">SpecialQuerySet</span><span class="p">(</span><span class="n">unchained</span><span class="o">.</span><span class="n">UnchainedQuerySet</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c"># do something to the kwargs</span>
+        <span class="k">return</span> <span class="n">kwargs</span>
+
+    <span class="k">def</span> <span class="nf">_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="c"># do something to the args</span>
+        <span class="k">return</span> <span class="n">args</span>
+
+<span class="k">class</span> <span class="nc">SpecialManager</span><span class="p">(</span><span class="n">unchained</span><span class="o">.</span><span class="n">UnchainedManager</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_query_set</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">SpecialQuerySet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">using</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="p">)</span>
+
+<span class="c"># Optional</span>
+<span class="k">class</span> <span class="nc">SpecialModel</span><span class="p">(</span><span class="n">unchained</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">SpecialManager</span><span class="p">()</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
+</pre>
+</div>
+
+
+<h2>License</h2>
+
+<p>(The MIT License)</p>
+
+<p>Copyright (c) 2011-2012 Beau Sorensen <a href="mailto:mail@beausorensen.com">mail@beausorensen.com</a></p>
+
+<p>Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+'Software'), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/sorensen">sorensen</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
