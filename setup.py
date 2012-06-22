@@ -8,7 +8,7 @@ except ImportError:
 from client_errors import __version__
 
 setup(
-    name='django-unchained',
+    name='django-orm-unchained',
     version=__version__,
     description='Django integration manager for field renaming',
     long_description=open('README.md').read(),

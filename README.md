@@ -9,7 +9,7 @@ to contain a certain constraint. Unchain your Django app!
 ## Installation
 
 ```bash
-pip install django-unchained
+pip install django-orm-unchained
 ````
 
 Alternatively, you can download the project and put the `client_errors` directory into 
